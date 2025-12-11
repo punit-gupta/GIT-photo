@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Gallery Photo & Video Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        /* Gallery Icon View */
+        .gallery-grid-view {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .gallery-icon {
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .gallery-icon:hover {
+            transform: scale(1.05);
+        }
+
+        .gallery-icon-box {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .gallery-icon:hover .gallery-icon-box {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .gallery-icon-name {
+            color: white;
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+
+        .gallery-icon-count {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        /* Gallery View */
+        .gallery-list-view {
+            display: none;
+        }
+
+        .gallery-list-view.active {
+            display: block;
+        }
+
+        .back-button {
+            padding: 12px 25px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Category Filter */
+        .category-filter {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .category-btn {
+            padding: 10px 25px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .category-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .category-btn.active {
+            background: white;
+            color: #667eea;
+            border-color: white;
+        }
+
+        .gallery-section {
+            display: none;
+        }
+
+        .gallery-section.active {
+            display: block;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .pagination button {
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .pagination button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .pagination button.active {
+            background: white;
+            color: #667eea;
+            border-color: white;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            color: white;
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.95em;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .gallery-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background: white;
+            height: 250px;
+        }
+
+        .gallery-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .gallery-item img,
+        .gallery-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: opacity 0.3s ease;
+        }
+
+        .gallery-item:hover img,
+        .gallery-item:hover video {
+            opacity: 0.8;
+        }
+
+        .media-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            font-weight: 600;
+            z-index: 10;
+        }
+
+        .play-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 25px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 11;
+        }
+
+        .gallery-item:hover .play-icon {
+            opacity: 1;
+        }
+
+        .gallery-item .overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+            color: white;
+            padding: 15px;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            z-index: 9;
+        }
+
+        .gallery-item:hover .overlay {
+            transform: translateY(0);
+        }
+
+        .overlay p {
+            font-size: 0.9em;
+            word-break: break-word;
+        }
+
+        /* Login Styles */
+        .login-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+            animation: slideDown 0.4s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-box h2 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 1.8em;
+        }
+
+        .login-box p {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #333;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.05em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .login-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .login-button:active {
+            transform: translateY(0);
+        }
+
+        .login-error {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9em;
+            display: none;
+        }
+
+        .gallery-wrapper {
+            display: none;
+        }
+
+        .gallery-wrapper.authenticated {
+            display: block;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content-wrapper {
+            position: relative;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: auto;
+            max-width: 90vw;
+            max-height: 80vh;
+            top: 50%;
+            transform: translateY(-50%);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-60%); }
+            to { transform: translateY(-50%); }
+        }
+
+        .modal img,
+        .modal video {
+            width: auto;
+            height: auto;
+            max-width: 90vw;
+            max-height: 75vh;
+            object-fit: contain;
+        }
+
+        .modal video {
+            background: black;
+        }
+
+        .modal-title {
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 1.1em;
+        }
+
+        .close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            z-index: 1001;
+        }
+
+        .close:hover {
+            color: #bbb;
+        }
+
+        .nav-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(255, 255, 255, 0.3);
+            color: white;
+            border: none;
+            font-size: 30px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border-radius: 5px;
+            z-index: 1001;
+        }
+
+        .nav-button:hover {
+            background-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .nav-button.prev {
+            left: 20px;
+        }
+
+        .nav-button.next {
+            right: 20px;
+        }
+
+        .counter {
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-size: 0.9em;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .gallery {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .nav-button {
+                font-size: 20px;
+                padding: 5px 15px;
+            }
+
+            .close {
+                font-size: 30px;
+                top: 10px;
+                right: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Container -->
+    <div class="login-container" id="loginContainer">
+        <div class="login-box">
+            <h2>Multi-Gallery Photo & Video Viewer</h2>
+            <p>Photo Gallery Login</p>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" placeholder="Enter password" required autofocus>
+                </div>
+                <button type="submit" class="login-button">Login</button>
+                <div class="login-error" id="loginError">Incorrect password. Please try again.</div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Gallery Content -->
+    <div class="gallery-wrapper" id="galleryWrapper">
+        <div class="container">
+            <div class="header">
+                <h1>Photo & Video Gallery</h1>
+                <p>Browse photos and videos from multiple collections</p>
+            </div>
+
+            <!-- Gallery Icon Grid View (Home Page) -->
+            <div id="iconGridView">
+                <div class="gallery-grid-view" id="galleryGridView">
+                    <!-- Gallery icons will be generated here -->
+                </div>
+            </div>
+
+            <!-- Gallery List View (Photo/Video View) -->
+            <div class="gallery-list-view" id="galleryListView">
+                <button class="back-button" onclick="backToGalleries()">← Back to Galleries</button>
+                
+                <!-- Category Filter -->
+                <div class="category-filter" id="categoryFilter">
+                    <button class="category-btn active" onclick="filterByCategory('all', event)">All</button>
+                    <button class="category-btn" onclick="filterByCategory('photos', event)">📷 Photos</button>
+                    <button class="category-btn" onclick="filterByCategory('videos', event)">🎥 Videos</button>
+                </div>
+                
+                <div id="galleryContainer">
+                    <!-- Gallery sections will be generated here -->
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination" id="paginationContainer">
+                    <!-- Pagination buttons will be generated here -->
+                </div>
+
+                <div class="page-info" id="pageInfo"></div>
+            </div>
+
+            <div class="footer">
+                <p>&copy; Photo & Video Collection</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for full-screen image/video view -->
+    <div id="imageModal" class="modal">
+        <span class="close">&times;</span>
+        <button class="nav-button prev" onclick="changeImage(-1)">&#10094;</button>
+        <button class="nav-button next" onclick="changeImage(1)">&#10095;</button>
+        <div class="modal-content-wrapper">
+            <div class="modal-title" id="modalTitle"></div>
+            <img class="modal-content" id="modalImage" src="" alt="" style="display:none;">
+            <video class="modal-content" id="modalVideo" controls style="display:none;">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        <div class="counter">
+            <span id="imageCounter">1 / 1</span>
+        </div>
+    </div>
+
+    <script>
+        // Change this password to your desired login password
+        const CORRECT_PASSWORD = "punit123";
+        const ITEMS_PER_PAGE = 20;
+
+        // Define galleries with their JSON files
+        const GALLERIES = [
+            { id: 'gallery-2012', name: '2012 Convocation', file: 'photos_2012.json', icon: '📷' },
+            { id: 'gallery-2015', name: '2015 Bhaia Collection', file: 'photos_2015_bhaia_remote.json', icon: '🎨' },
+            { id: 'gallery-2016', name: '2016 Collection', file: 'photos_2016_remote.json', icon: '🎥' },
+            { id: 'gallery-2019', name: '2019 Collection', file: 'photos_2019_remote.json', icon: '🌟' },
+            { id: 'gallery-2020', name: '2020 Collection', file: '2020_photos_remote.json', icon: '✨' }
+        ];
+
+        let allGalleries = {}; // Store all galleries data
+        let currentGalleryId = null;
+        let currentPage = 1;
+        let currentImageIndex = 0;
+        let currentFilter = 'all'; // 'all', 'photos', 'videos'
+        const modal = document.getElementById('imageModal');
+        const closeBtn = document.querySelector('.close');
+
+        // Login handler
+        function handleLogin(event) {
+            event.preventDefault();
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+
+            if (password === CORRECT_PASSWORD) {
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('galleryWrapper').classList.add('authenticated');
+                errorDiv.style.display = 'none';
+                sessionStorage.setItem('galleryAuthenticated', 'true');
+                loadAllGalleries();
+            } else {
+                errorDiv.style.display = 'block';
+                document.getElementById('password').value = '';
+                document.getElementById('password').focus();
+            }
+        }
+
+        // Check if already authenticated
+        if (sessionStorage.getItem('galleryAuthenticated') === 'true') {
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('galleryWrapper').classList.add('authenticated');
+            document.addEventListener('DOMContentLoaded', loadAllGalleries);
+        }
+
+        // Handle Enter key on password input
+        document.addEventListener('DOMContentLoaded', function() {
+            const passwordInput = document.getElementById('password');
+            if (passwordInput) {
+                passwordInput.addEventListener('keypress', function(event) {
+                    if (event.key === 'Enter') {
+                        handleLogin(event);
+                    }
+                });
+            }
+        });
+
+        // Load all galleries
+        function loadAllGalleries() {
+            const loadPromises = GALLERIES.map(gallery => 
+                fetch(gallery.file)
+                    .then(response => {
+                        if (!response.ok) throw new Error(`Failed to load ${gallery.file}`);
+                        return response.json();
+                    })
+                    .then(data => {
+                        allGalleries[gallery.id] = { 
+                            ...gallery, 
+                            media: data.photos || [] 
+                        };
+                    })
+                    .catch(error => {
+                        console.error(`Error loading ${gallery.file}:`, error);
+                        allGalleries[gallery.id] = { 
+                            ...gallery, 
+                            media: [],
+                            error: true 
+                        };
+                    })
+            );
+
+            Promise.all(loadPromises).then(() => {
+                initializeGalleries();
+            });
+        }
+
+        // Initialize galleries UI - Show gallery icons on home page
+        function initializeGalleries() {
+            // Create gallery icons
+            const gridView = document.getElementById('galleryGridView');
+            gridView.innerHTML = '';
+            
+            GALLERIES.forEach((gallery) => {
+                const galleryData = allGalleries[gallery.id];
+                const count = galleryData.media ? galleryData.media.length : 0;
+                
+                const iconDiv = document.createElement('div');
+                iconDiv.className = 'gallery-icon';
+                iconDiv.innerHTML = `
+                    <div class="gallery-icon-box">${gallery.icon}</div>
+                    <div class="gallery-icon-name">${gallery.name}</div>
+                    <div class="gallery-icon-count">${count} items</div>
+                `;
+                iconDiv.onclick = () => openGallery(gallery.id);
+                gridView.appendChild(iconDiv);
+            });
+
+            // Create gallery sections (hidden initially)
+            const container = document.getElementById('galleryContainer');
+            container.innerHTML = '';
+            
+            Object.keys(allGalleries).forEach((galleryId) => {
+                const section = document.createElement('div');
+                section.className = 'gallery-section';
+                section.id = galleryId;
+                section.innerHTML = `<div class="gallery" data-gallery="${galleryId}"></div>`;
+                container.appendChild(section);
+            });
+        }
+
+        // Filter media by category
+        function getFilteredMedia(allMedia, filter) {
+            if (filter === 'all') return allMedia;
+            if (filter === 'photos') return allMedia.filter(item => !isVideoFile(item.src));
+            if (filter === 'videos') return allMedia.filter(item => isVideoFile(item.src));
+            return allMedia;
+        }
+
+        // Render a specific gallery with pagination and filtering
+        function renderGallery(galleryId, page = 1) {
+            const galleryData = allGalleries[galleryId];
+            const galleryElement = document.querySelector(`[data-gallery="${galleryId}"]`);
+            galleryElement.innerHTML = '';
+
+            let allMedia = galleryData.media;
+            const filteredMedia = getFilteredMedia(allMedia, currentFilter);
+            
+            const startIndex = (page - 1) * ITEMS_PER_PAGE;
+            const endIndex = startIndex + ITEMS_PER_PAGE;
+            const paginatedMedia = filteredMedia.slice(startIndex, endIndex);
+
+            if (paginatedMedia.length === 0) {
+                galleryElement.innerHTML = '<p style="color: white; text-align: center; grid-column: 1/-1; padding: 40px;">No ' + currentFilter + ' found in this gallery.</p>';
+            }
+
+            paginatedMedia.forEach((item, index) => {
+                // Find actual index in original media array for modal navigation
+                const actualIndex = allMedia.findIndex(m => m.src === item.src);
+                const isVideo = isVideoFile(item.src);
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'gallery-item';
+                
+                if (isVideo) {
+                    itemDiv.innerHTML = `
+                        <video>
+                            <source src="${item.src}" type="video/mp4">
+                        </video>
+                        <div class="media-badge">VIDEO</div>
+                        <div class="play-icon">▶</div>
+                        <div class="overlay">
+                            <p>${item.name}</p>
+                        </div>
+                    `;
+                } else {
+                    itemDiv.innerHTML = `
+                        <img src="${item.src}" alt="${item.name}" loading="lazy">
+                        <div class="media-badge">PHOTO</div>
+                        <div class="overlay">
+                            <p>${item.name}</p>
+                        </div>
+                    `;
+                }
+                
+                itemDiv.onclick = () => openModal(galleryId, actualIndex);
+                galleryElement.appendChild(itemDiv);
+            });
+
+            // Create pagination
+            createPagination(galleryId, page, filteredMedia.length);
+        }
+
+        // Create pagination controls
+        function createPagination(galleryId, currentPage, totalItems = null) {
+            const galleryData = allGalleries[galleryId];
+            
+            // If totalItems not provided, calculate from filtered media
+            if (totalItems === null) {
+                const filteredMedia = getFilteredMedia(galleryData.media, currentFilter);
+                totalItems = filteredMedia.length;
+            }
+            
+            const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+            const paginationContainer = document.getElementById('paginationContainer');
+            const pageInfo = document.getElementById('pageInfo');
+
+            paginationContainer.innerHTML = '';
+
+            // Previous button
+            const prevBtn = document.createElement('button');
+            prevBtn.textContent = '← Previous';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.onclick = () => goToPage(galleryId, currentPage - 1);
+            paginationContainer.appendChild(prevBtn);
+
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.textContent = i;
+                btn.className = i === currentPage ? 'active' : '';
+                btn.onclick = () => goToPage(galleryId, i);
+                paginationContainer.appendChild(btn);
+            }
+
+            // Next button
+            const nextBtn = document.createElement('button');
+            nextBtn.textContent = 'Next →';
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.onclick = () => goToPage(galleryId, currentPage + 1);
+            paginationContainer.appendChild(nextBtn);
+
+            // Page info
+            const startItem = (currentPage - 1) * ITEMS_PER_PAGE + 1;
+            const endItem = Math.min(currentPage * ITEMS_PER_PAGE, totalItems);
+            pageInfo.textContent = `Showing ${startItem} - ${endItem} of ${totalItems} items`;
+        }
+
+        // Go to a specific page
+        function goToPage(galleryId, page) {
+            currentPage = page;
+            renderGallery(galleryId, page);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Check if file is a video
+        function isVideoFile(url) {
+            const videoExtensions = ['.mp4', '.webm', '.ogv', '.mov', '.avi', '.mkv'];
+            return videoExtensions.some(ext => url.toLowerCase().includes(ext));
+        }
+
+        // Filter gallery by category
+        function filterByCategory(category, event) {
+            currentFilter = category;
+            currentPage = 1;
+
+            // Update active button
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Re-render gallery with new filter
+            renderGallery(currentGalleryId, 1);
+        }
+
+        // Open gallery from home page
+        function openGallery(galleryId) {
+            currentGalleryId = galleryId;
+            currentPage = 1;
+            currentImageIndex = 0;
+            currentFilter = 'all'; // Reset filter to all
+
+            // Hide icon grid view, show gallery list view
+            document.getElementById('iconGridView').style.display = 'none';
+            document.getElementById('galleryListView').classList.add('active');
+
+            // Reset category filter buttons
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.category-btn').classList.add('active');
+
+            // Update active section
+            document.querySelectorAll('.gallery-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(galleryId).classList.add('active');
+
+            // Render the gallery
+            renderGallery(galleryId, 1);
+        }
+
+        // Back to galleries home page
+        function backToGalleries() {
+            document.getElementById('iconGridView').style.display = 'block';
+            document.getElementById('galleryListView').classList.remove('active');
+            currentGalleryId = null;
+            currentPage = 1;
+            currentFilter = 'all'; // Reset filter
+        }
+
+        // Open modal
+        function openModal(galleryId, index) {
+            if (currentGalleryId !== galleryId) {
+                currentGalleryId = galleryId;
+            }
+            currentImageIndex = index;
+            displayMedia();
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close modal
+        function closeModal() {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            // Stop video playback
+            const video = document.getElementById('modalVideo');
+            if (video) video.pause();
+        }
+
+        // Display media (image or video)
+        function displayMedia() {
+            if (!currentGalleryId || !allGalleries[currentGalleryId]) return;
+
+            const mediaArray = allGalleries[currentGalleryId].media;
+            const media = mediaArray[currentImageIndex];
+            const modalImage = document.getElementById('modalImage');
+            const modalVideo = document.getElementById('modalVideo');
+
+            // Hide both first
+            modalImage.style.display = 'none';
+            modalVideo.style.display = 'none';
+
+            if (isVideoFile(media.src)) {
+                modalVideo.src = media.src;
+                modalVideo.style.display = 'block';
+            } else {
+                modalImage.src = media.src;
+                modalImage.style.display = 'block';
+            }
+
+            document.getElementById('modalTitle').textContent = media.name;
+            document.getElementById('imageCounter').textContent = `${currentImageIndex + 1} / ${mediaArray.length}`;
+        }
+
+        // Change image/video
+        function changeImage(direction) {
+            if (!currentGalleryId || !allGalleries[currentGalleryId]) return;
+
+            const mediaArray = allGalleries[currentGalleryId].media;
+            currentImageIndex += direction;
+            
+            if (currentImageIndex >= mediaArray.length) {
+                currentImageIndex = 0;
+            } else if (currentImageIndex < 0) {
+                currentImageIndex = mediaArray.length - 1;
+            }
+            
+            displayMedia();
+        }
+
+        // Event listeners
+        closeBtn.onclick = closeModal;
+
+        modal.onclick = function(event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(event) {
+            if (modal.style.display === 'block') {
+                if (event.key === 'ArrowLeft') changeImage(-1);
+                if (event.key === 'ArrowRight') changeImage(1);
+                if (event.key === 'Escape') closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
